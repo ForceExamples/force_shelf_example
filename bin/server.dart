@@ -3,7 +3,6 @@
 
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -11,16 +10,7 @@ import 'package:shelf_static/shelf_static.dart';
 import 'package:force/force_serverside.dart';
 
 void main(List<String> args) {
-  var parser = new ArgParser()
-      ..addOption('port', abbr: 'p', defaultsTo: '6060');
-
-  var result = parser.parse(args);
-
-  var port = int.parse(result['port'], onError: (val) {
-    stdout.writeln('Could not parse port value "$val" into a number.');
-    exit(1);
-  });
-  
+  // instantiate Force and hand it over to shelf socket
   Force force = new Force();
   var _handlerws = webSocketHandler((webSocket) => force.handle(new StreamSocket(webSocket)));
   
@@ -36,12 +26,14 @@ void main(List<String> args) {
   var staticHandler = createStaticHandler('build/web', 
           defaultDocument: 'index.html');
   
+  // stack up handlers
   var handler = new Cascade()
       .add(staticHandler)
       .add(_handlerws)
       .handler;
   
-  io.serve(handler, 'localhost', port).then((server) {
+  // start shelf
+  io.serve(handler, 'localhost', 8080).then((server) {
     print('Serving at http://${server.address.host}:${server.port}');
   });
 }
